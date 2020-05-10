@@ -5,5 +5,5 @@ from .models import File
 
 @admin.register(File)
 class FileAdmin(admin.ModelAdmin):
-	readonly_fields = ('modified', 'path', )
-	fields  = ('name', 'file_type', 'path', 'modified')
+	readonly_fields = ('modified',)
+	fields  = ('name', 'file_type', 'path', 'modified', 'content')

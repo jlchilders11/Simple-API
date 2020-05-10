@@ -25,10 +25,17 @@ class File(models.Model):
 	file_type = models.PositiveIntegerField(
 		choices=FILE_TYPE_CHOICES, 
 	)
+
+	#definition to get our file path. Ideally this would be a lambda, but django cannot handle that migration
+	def get_file_path(instance, filename):
+		return '{0}'.format(instance.path) 
+
 	#our actual file
 	content = models.FileField(
-		unique=True
+		unique=True,
+		upload_to=get_file_path
 	)
+	path = models.CharField(max_length=256)
 
 	#calculated property that dynamically gets when a file was changed
 	@property
@@ -42,9 +49,24 @@ class File(models.Model):
 		else:
 			return 'N/A'
 
-	@property
-	def path(self):
-		return self.content.path
+	def save(self, *args, **kwargs):
+		super(File, self).save(*args, **kwargs)
+
+		#to handle the case in which a file needs moved on the system, the path should be changed
+		if self.path != self.content.name:
+			#get our old and new locations
+			old_path = self.content.storage.path(self.content.name)
+			new_path = self.content.storage.path(self.path)
+
+			#if we are moving it to a directory, and that directory doesn't exist, make it
+			if not os.path.exists(os.path.dirname(new_path)):
+				os.makedirs(os.path.dirname(new_path))
+
+			#change the name, update our file so it knows where it is, then save
+			os.rename(old_path, new_path)
+			self.content.name = new_path
+			super(File, self).save(*args, **kwargs)
+
 	
 # These two auto-delete files from filesystem when they are unneeded:
 
@@ -58,7 +80,8 @@ def auto_delete_file_on_delete(sender, instance, **kwargs):
         if os.path.isfile(instance.content.path):
             os.remove(instance.content.path)
 
-@receiver(models.signals.pre_save, sender=File)
+
+#@receiver(models.signals.pre_save, sender=File)
 def auto_delete_file_on_change(sender, instance, **kwargs):
     """
     Deletes old file from filesystem
@@ -73,7 +96,7 @@ def auto_delete_file_on_change(sender, instance, **kwargs):
     except File.DoesNotExist:
         return False
 
-    new_file = instance.path
+    new_file = instance.content
     if not old_file == new_file:
-        if os.path.isfile(old_file.path):
+         if os.path.isfile(old_file.path):
             os.remove(old_file.path)
