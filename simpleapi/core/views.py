@@ -1,3 +1,9 @@
-from django.shortcuts import render
+from rest_framework import viewsets
+from rest_framework import permissions 
+from .models import File 
+from .serializers import FileSerializer 
 
-# Create your views here.
+class FileViewSet(viewsets.ModelViewSet):
+	queryset = File.objects.all()
+	serializer_class = FileSerializer
+	permissions_classes = [permissions.IsAuthenticated]
