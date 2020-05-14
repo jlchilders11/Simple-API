@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}{{ block.super }}AuthToken Delete{% endblock %}
+{% block content %}
+<div class="text-center m-2">
+	<div>
+		<h1 class="display-4">Confirm Delete</h1>
+		<p class="lead">Are you sure you wish to delete the Auth Token for {{ object.user.username }}? </p>
+		<form method="post">{% csrf_token %}
+			<a href="{% url 'TokenList' %}"><input class="btn" type="button" value="Cancel"></a>
+			<input class="btn btn-danger" type="submit" value="Confirm">
+		</form>
+	</div>
+</div>
+{% endblock %}

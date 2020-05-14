@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}{{ block.super }}AuthToken List{% endblock %}
+{% block content %}
+<h1 class="text-center">
+	Authorization Tokens
+</h1>
+<div class="text-center m-2">
+	<a href="{% url 'TokenCreate' %}">
+		<button class="btn btn-success">Create Auth Token</button>
+	</a>
+</div>
+{% if token_list %}
+<table class="table table-striped">
+	<thead>
+		<tr>
+			<th>
+				Username
+			</th>
+			<th>
+				Created Date
+			</th>
+			<th>
+				Auth Token
+			</th>
+			<th></th>
+		</tr>
+	</thead>
+	{% for token in token_list %}
+	<tr>
+		<td class="align-middle">{{ token.user.username }}</td>
+		<td class="align-middle">{{ token.created }}</td>
+		<td class="align-middle">{{ token.key }}</td>
+		<td>
+			<a href="{% url 'TokenDelete' slug=token.user_id %}">
+				<button class="btn btn-danger">Delete</button>
+			</a>
+		</td>
+	</tr>
+	{% endfor %}
+</table>
+{% else %}
+<p class="lead text-center">There are currently no Authorization Tokens for this API.</p>
+{% endif %}
+{% endblock %}

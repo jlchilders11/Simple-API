@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     #3rd Party Apps
+    'bootstrap4',
     'rest_framework',
     'rest_framework.authtoken',
 
@@ -62,7 +63,7 @@ ROOT_URLCONF = 'simpleapi.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': ['templates/'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -128,4 +129,7 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 #Media Root, determines the base root for where a file will be stored
-MEDIA_ROOT = 'files'
+MEDIA_ROOT = '/'
+
+#LOGIN_URL tells anything that cares where to go to go to login
+LOGIN_URL = 'Login'

@@ -1,74 +1,51 @@
-#django imports
+# django imports
 from django.conf import settings
 from django.db import models
 from django.dispatch import receiver
 
-#module imports
+# module imports
 import arrow
 
-#python imports
+# python imports
 import os
 
 # Create your models here.
 
+
 class File(models.Model):
-	FILE_TYPE_CHOICES = [
-		(0, 'Text'),
-		(1, 'Markdown'),
-		(2, 'Binary'),
-	]
+    FILE_TYPE_CHOICES = [
+        (0, 'Text'),
+        (1, 'Markdown'),
+        (2, 'Binary'),
+    ]
 
-	#human friendly name of our file
-	name = models.CharField(max_length=256)
-	#a choice of type for our file. Determines how it is returned by the API
-	#types are defined in FILE_TYPE_CHOICES
-	file_type = models.PositiveIntegerField(
-		choices=FILE_TYPE_CHOICES, 
-	)
+    # human friendly name of our file
+    name = models.CharField(max_length=256)
+    # a choice of type for our file. Determines how it is returned by the API
+    # types are defined in FILE_TYPE_CHOICES
+    file_type = models.PositiveIntegerField(
+        choices=FILE_TYPE_CHOICES,
+    )
 
-	#definition to get our file path. Ideally this would be a lambda, but django cannot handle that migration
-	def get_file_path(instance, filename):
-		return '{0}'.format(instance.path) 
+    # our actual file
+    content = models.FileField(
+        unique=True
+    )
 
-	#our actual file
-	content = models.FileField(
-		unique=True,
-		upload_to=get_file_path
-	)
-	path = models.CharField(max_length=256)
+    # calculated property that dynamically gets when a file was changed
+    @property
+    def modified(self):
+        if(self.path):
+            return arrow.get(
+                os.path.getmtime(
+                    self.content.path
+                )
+            ).format('M/D/YYYY h:mm A')
+        else:
+            return 'N/A'
 
-	#calculated property that dynamically gets when a file was changed
-	@property
-	def modified(self):
-		if(self.path):
-			return arrow.get(
-				os.path.getmtime(
-					self.content.path
-				)
-			).format('M/D/YYYY h:mm A')
-		else:
-			return 'N/A'
-
-	def save(self, *args, **kwargs):
-		super(File, self).save(*args, **kwargs)
-
-		#to handle the case in which a file needs moved on the system, the path should be changed
-		if self.path != self.content.name:
-			#get our old and new locations
-			old_path = self.content.storage.path(self.content.name)
-			new_path = self.content.storage.path(self.path)
-
-			#if we are moving it to a directory, and that directory doesn't exist, make it
-			if not os.path.exists(os.path.dirname(new_path)):
-				os.makedirs(os.path.dirname(new_path))
-
-			#change the name, update our file so it knows where it is, then save
-			os.rename(old_path, new_path)
-			self.content.name = new_path
-			super(File, self).save(*args, **kwargs)
-
-	
 # These two auto-delete files from filesystem when they are unneeded:
+
 
 @receiver(models.signals.post_delete, sender=File)
 def auto_delete_file_on_delete(sender, instance, **kwargs):
@@ -81,7 +58,7 @@ def auto_delete_file_on_delete(sender, instance, **kwargs):
             os.remove(instance.content.path)
 
 
-#@receiver(models.signals.pre_save, sender=File)
+@receiver(models.signals.pre_save, sender=File)
 def auto_delete_file_on_change(sender, instance, **kwargs):
     """
     Deletes old file from filesystem
@@ -98,5 +75,5 @@ def auto_delete_file_on_change(sender, instance, **kwargs):
 
     new_file = instance.content
     if not old_file == new_file:
-         if os.path.isfile(old_file.path):
+        if os.path.isfile(old_file.path):
             os.remove(old_file.path)
