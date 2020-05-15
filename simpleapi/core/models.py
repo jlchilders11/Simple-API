@@ -1,54 +1,62 @@
+'''
+Our defined models for the Simple API
+Contains the File class and its listeners
+'''
+# python imports
+import os
+
 # django imports
-from django.conf import settings
 from django.db import models
 from django.dispatch import receiver
 
 # module imports
 import arrow
 
-# python imports
-import os
-
-# Create your models here.
-
-
 class File(models.Model):
+    '''
+    This model represents a File on our Filesystem
+    name: A human readable name for our lists
+    file_type: determines how our file is stringified for return
+    content: in the database this is our paht to our file, but also allows for using
+        the file system to manipulate the object at the end of that path
+    modified: This returns when the file was last modified, and is read only
+    '''
+
+    #Text: returns the plaintext read of the file
+    #Markdown: returns the plaintext read of the file, plus the markdown as html
+    #Binary: Returns the base64 string representation of the file
     FILE_TYPE_CHOICES = [
         (0, 'Text'),
         (1, 'Markdown'),
         (2, 'Binary'),
     ]
 
-    # human friendly name of our file
     name = models.CharField(max_length=256)
-    # a choice of type for our file. Determines how it is returned by the API
-    # types are defined in FILE_TYPE_CHOICES
     file_type = models.PositiveIntegerField(
         choices=FILE_TYPE_CHOICES,
     )
-
-    # our actual file
     content = models.FileField(
         unique=True
     )
-
-    # calculated property that dynamically gets when a file was changed
     @property
     def modified(self):
-        if(self.path):
+        '''
+        Calculated property that gets the modified time from the OS
+        and formats it nicely using arrow
+        '''
+        if self.content:
             return arrow.get(
                 os.path.getmtime(
-                    self.content.path
+                    self.content.path # pylint: disable=no-member
                 )
             ).format('M/D/YYYY h:mm A')
-        else:
-            return 'N/A'
+        return 'N/A'
 
 # These two auto-delete files from filesystem when they are unneeded:
 
 
 @receiver(models.signals.post_delete, sender=File)
-def auto_delete_file_on_delete(sender, instance, **kwargs):
+def auto_delete_file_on_delete(sender, instance, **kwargs): # pylint: disable=unused-argument
     """
     Deletes file from filesystem
     when corresponding `File` object is deleted.
@@ -59,7 +67,7 @@ def auto_delete_file_on_delete(sender, instance, **kwargs):
 
 
 @receiver(models.signals.pre_save, sender=File)
-def auto_delete_file_on_change(sender, instance, **kwargs):
+def auto_delete_file_on_change(sender, instance, **kwargs): # pylint: disable=unused-argument disable=inconsistent-return-statements
     """
     Deletes old file from filesystem
     when corresponding `File` object is updated
@@ -69,8 +77,8 @@ def auto_delete_file_on_change(sender, instance, **kwargs):
         return False
 
     try:
-        old_file = File.objects.get(pk=instance.pk).content
-    except File.DoesNotExist:
+        old_file = File.objects.get(pk=instance.pk).content # pylint: disable=no-member
+    except File.DoesNotExist: # pylint: disable=no-member
         return False
 
     new_file = instance.content

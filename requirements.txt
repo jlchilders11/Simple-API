@@ -3,3 +3,5 @@ djangorestframework
 markdown
 arrow
 django-bootstrap4
+django-markup[all_filter_dependencies]
+pylint
