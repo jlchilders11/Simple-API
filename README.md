@@ -2,7 +2,7 @@
 
 To install:
  
-* Download Python[https://www.python.org/]
+* [Download Python](https://www.python.org/)
 * Use pip to install all of the dependencies with pip install -r "requirements.txt"
 * Apply all of the migrations with manage.py migrate
 * Run the server with manage.py runserver
